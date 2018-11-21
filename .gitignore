@@ -1,2 +1,6 @@
 # ignore all db
 records
+records-journal
+sampleData.csv
+.vscode
+myproject/__pychache__
