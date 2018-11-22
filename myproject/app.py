@@ -201,6 +201,14 @@ tab_2 = html.Div([
     html.Div(
         className = "row",
         children = [
+            html.H2('Accounts Breakdown')
+        ]
+    ),
+
+    #row
+    html.Div(
+        className = "row",
+        children = [
             html.Div(
                 className = "twelve columns",
                 children = [dash_table.DataTable(id = 'breakdown')]
@@ -208,6 +216,24 @@ tab_2 = html.Div([
         ]
     ),
 
+    #row
+    html.Div(
+        className = "row",
+        children = [
+            html.H2('Account Receivables')
+        ]
+    ),
+
+    #row
+    html.Div(
+        className = "row",
+        children = [
+            html.Div(
+                className = "twelve columns",
+                children = [dash_table.DataTable(id = 'receivables')]
+            )
+        ]
+    ),
     
 ])
 

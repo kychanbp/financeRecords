@@ -45,7 +45,7 @@ def update_trend(start_date, end_date):
     #connect to sqlite
     db = sqlite3.connect("records")
 
-    df = func.trendAcct(db, "Entry", "Statm")
+    df = func.trendAcct(db, "Entry", "Statm", end_date)
 
     line_assets = go.Scatter(x=df['Date'],
                         y=df['Assets'],
@@ -86,7 +86,7 @@ def update_trend(start_date, end_date):
     dash.dependencies.Output("pattern",'figure'),
     [dash.dependencies.Input('dateRange', 'start_date'),
     dash.dependencies.Input('dateRange', 'end_date')])
-def update_patterhn(start_date, end_date):
+def update_pattern(start_date, end_date):
     #connect to sqlite
     db = sqlite3.connect("records")
     spending = func.spending_pattern(db, "Entry", "Statm", start_date, end_date)
@@ -104,10 +104,10 @@ def update_patterhn(start_date, end_date):
     dash.dependencies.Output("breakdown",'columns'),
     [dash.dependencies.Input('dateRange', 'start_date'),
     dash.dependencies.Input('dateRange', 'end_date')])
-def update_records_columns(start_date, end_date):
+def update_breakdown_columns(start_date, end_date):
     #connect to sqlite
     db = sqlite3.connect("records")
-    df = func.account_summary(db, "Entry","Statm")
+    df = func.account_summary(db, "Entry","Statm", end_date)
     columns=[{"name": i, "id": i} for i in df.columns]
     return columns
 
@@ -119,7 +119,31 @@ def update_records_columns(start_date, end_date):
 def update_breakdown_rows(start_date, end_date):
     #connect to sqlite
     db = sqlite3.connect("records")
-    df = func.account_summary(db, "Entry","Statm")
+    df = func.account_summary(db, "Entry","Statm", end_date)
+    data=df.to_dict('records')
+    return data
+
+@app.callback(
+    dash.dependencies.Output("receivables",'columns'),
+    [dash.dependencies.Input('dateRange', 'start_date'),
+    dash.dependencies.Input('dateRange', 'end_date')])
+def update_receivables_columns(start_date, end_date):
+    #connect to sqlite
+    db = sqlite3.connect("records")
+    df = func.account_receivables(db, "Entry","Statm", end_date)
+    columns=[{"name": i, "id": i} for i in df.columns]
+    return columns
+
+
+@app.callback(
+    dash.dependencies.Output("receivables",'data'),
+    [
+dash.dependencies.Input('dateRange', 'start_date'),
+    dash.dependencies.Input('dateRange', 'end_date')])
+def update_receivables_rows(start_date, end_date):
+    #connect to sqlite
+    db = sqlite3.connect("records")
+    df = func.account_receivables(db, "Entry","Statm", end_date)
     data=df.to_dict('records')
     return data
 
@@ -128,7 +152,7 @@ def update_breakdown_rows(start_date, end_date):
     [dash.dependencies.Input('button', 'n_clicks'),
     dash.dependencies.Input('dateRange', 'start_date'),
     dash.dependencies.Input('dateRange', 'end_date')])
-def update_breakdown_columns(n_clicks, start_date, end_date):
+def update_records_columns(n_clicks, start_date, end_date):
     #connect to sqlite
     db = sqlite3.connect("records")
     df = func.records(db, "Entry","Statm",start_date, end_date)
@@ -169,7 +193,7 @@ def push_record(n_clicks, category, account, cashFlow, remarks):
             db.commit()
             db.close()
         elif remarks != 'Default' or remarks == '':
-            query = 'INSERT INTO Entry (Category, Accounts, Cash_Flow) VALUES ("{}", "{}", {}, "{}")'.format(category, account, cashFlow, remarks)
+            query = 'INSERT INTO Entry (Category, Accounts, Cash_Flow, Remarks) VALUES ("{}", "{}", {}, "{}")'.format(category, account, cashFlow, remarks)
             cur = db.cursor()
             cur.execute(query)
             db.commit()

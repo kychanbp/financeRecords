@@ -43,10 +43,13 @@ def acctVar(db, table1, table2, start_date, end_date):
     return Assets, Liabilities, Equities
 
 #function to calculate the trend of a, l, e
-def trendAcct(db, table1, table2):
+def trendAcct(db, table1, table2, end_date):
+    #end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+
     table1 = pd.read_sql_query("SELECT * FROM {}".format(table1), db)
     table2 = pd.read_sql_query("SELECT * FROM {}".format(table2), db)
 
+    table1 = table1[(table1['Date'] <= end_date)]
     dates = table1['Date'].tolist()
     dates = list(set(dates))
     dates.sort()
@@ -83,6 +86,7 @@ def spending(db, table1, table2, start_date, end_date):
     fiat['Date'] = fiat['Date'].dt.date
 
     fiat = fiat[(fiat['Date'] >= start_date) & (fiat['Date'] <= end_date)]
+    fiat = fiat[(fiat['Accounts']!= 'Account Receivables') & (fiat['Accounts']!= 'Account Payables')]
 
     return fiat['Cash_Flow'].sum()
 
@@ -102,15 +106,17 @@ def spending_pattern(db, table1, table2, start_date, end_date):
 
     fiat['Date'] = pd.to_datetime(fiat['Date'])
     fiat['Date'] = fiat['Date'].dt.date
-
+    
     fiat = fiat[(fiat['Date'] >= start_date) & (fiat['Date'] <= end_date)]
+    fiat = fiat[(fiat['Accounts']!= 'Account Receivables') & (fiat['Accounts']!= 'Account Payables')]
     fiat['Cash_Flow'] = fiat['Cash_Flow']*-1 #excluded income (multipied -1)
     fiat = fiat.groupby('Category')['Accounts','Cash_Flow'].sum()
     fiat.reset_index(inplace=True)
     return fiat
 
 #function to get account summary
-def account_summary(db,table1, table2 ):
+def account_summary(db,table1, table2, end_date):
+    end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
     table1 = pd.read_sql_query("SELECT * FROM {}".format(table1), db)
     table2 = pd.read_sql_query("SELECT * FROM {}".format(table2), db)
 
@@ -118,10 +124,28 @@ def account_summary(db,table1, table2 ):
 
     fiat['Date'] = pd.to_datetime(fiat['Date'])
     fiat['Date'] = fiat['Date'].dt.date
+    fiat = fiat[(fiat['Date'] <= end_date)]
 
     fiat = fiat.groupby('Accounts').sum()
     fiat.reset_index(inplace=True)
 
     return fiat
-print(account_summary(db, "Entry", "Statm"))
+
+#function to list account receivables
+def account_receivables(db, table1, table2, end_date):
+    end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+    table1 = pd.read_sql_query("SELECT * FROM {}".format(table1), db)
+    table2 = pd.read_sql_query("SELECT * FROM {}".format(table2), db)
+
+    fiat = pd.merge(table1, table2, on=['Accounts'])
+
+    fiat['Date'] = pd.to_datetime(fiat['Date'])
+    fiat['Date'] = fiat['Date'].dt.date
+    fiat = fiat[(fiat['Date'] <= end_date)]
+
+    fiat = fiat[fiat['Sub_Statements']=='Account Receivables']
+    fiat = fiat.groupby(['Sub_Statements', 'Remarks'])['Cash_Flow'].sum()
+    fiat = fiat.reset_index()
+    return pd.DataFrame(fiat)
+#print(account_receivables(db, "Entry", "Statm", "2018-11-30"))
 #print(spending_pattern(db, "Entry", "Statm", "2018-11-01", "2018-11-30"))
